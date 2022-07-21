@@ -1,0 +1,557 @@
+
+import os
+import csv
+from pptx import Presentation
+from pptx.chart.data import CategoryChartData
+from pptx.chart.data import ChartData
+from pptx.chart.data import XyChartData
+from pptx.enum.chart import XL_CHART_TYPE
+from pptx.util import Inches
+from pptx import Presentation
+from pptx.chart.data import CategoryChartData,ChartData
+from pptx.util import Inches, Pt
+from pptx.enum.text import PP_ALIGN
+from pptx.enum.shapes import MSO_CONNECTOR,MSO_SHAPE
+from pptx.enum.chart import *
+from pptx.util import Inches 
+from pptx.enum.chart import XL_CHART_TYPE
+from pptx.util import Inches
+from pptx.enum.text import PP_ALIGN
+from chartFunctions import *
+
+import urllib.request
+import requests
+from pptx.dml.color import RGBColor
+import pandas as pd
+import numpy as np
+import logging
+import time
+
+from pptx.dml.color import RGBColor
+from pptx.enum.dml import MSO_THEME_COLOR
+from pptx.util import Pt
+ #fontipT.color.rgb = RGBColor(255, 255, 255)
+#functions
+
+
+
+now = time.localtime(time.time())
+
+if now[1] == 9 and now[2]>=8 and now[2]<=13:
+  week = 1
+if now[1] == 9 and now[2]>=14 and now[2]<=20:
+  week = 2
+if now[1] == 9 and now[2]>=21 and now[2]<=27:
+  week = 3
+if (now[1] == 10 and now[2]>=1 and now[2]<=4) | (now[1] == 9 and now[2]>=28 and now[2]<=30):
+  week = 4
+if now[1] == 10 and now[2]>=5 and now[2]<=11:
+  week = 5
+
+if now[1] == 10 and now[2]>=12 and now[2]<=18:
+  week = 6
+if now[1] == 10 and now[2]>=19 and now[2]<=25:
+  week = 7
+if (now[1] == 10 and now[2]>=26 and now[2]<=31) | (now[1] == 11 and now[2]==1):
+  week = 8
+  
+if now[1] == 11 and now[2]>=2 and now[2]<=8:
+  week = 9
+if now[1] == 11 and now[2]>=9 and now[2]<=15:
+  week = 10
+if now[1] == 11 and now[2]>=16 and now[2]<=22:
+  week = 11
+if now[1] == 11 and now[2]>=23 and now[2]<=29:
+  week = 12
+if (now[1] == 12 and now[2]>=1 and now[2]<=6) | (now[1] == 11 and now[2]==30):
+  week = 13
+if now[1] == 12 and now[2]>=7 and now[2]<=13:
+  week = 14
+if now[1] == 12 and now[2]>=14 and now[2]<=20:
+  week = 15
+if now[1] == 12 and now[2]>=21 and now[2]<=27:
+  week = 16
+if (now[1] == 12 and now[2]>=28 and now[2]<=31) | (now[1] == 22 and now[2]>=1 & now[2]<=3):
+  week = 17
+if (now[1] == 22 and now[2]>=4 and now[2]<=10):
+  week = 18
+
+
+print(week)
+
+
+
+#####EPA/PLAY
+#####python powerpoint 
+black = RGBColor(0,0,0)
+red = RGBColor(255,0,0)
+
+##CHANGE THE WEEK
+
+##load in nfl list
+
+nflList = pd.read_csv("nfl list.csv")
+long =[]
+long2 =[]
+short =[]
+short2 =[]
+for i in range(32):
+  long.append(nflList["long"][i])
+  long2.append(nflList["long2"][i])
+  short.append(nflList["short"][i])
+  short2.append(nflList["short2"][i])
+
+
+
+
+##UPDATE THE MATCHUPS
+df_matchups = pd.read_csv("week" + str(week) + "/" + "matchups.csv")
+
+home = df_matchups["home"]
+away = df_matchups["away"]
+Matchups=[]
+
+for i in range(len(home)):
+  Matchups.append([away[i],home[i]])
+
+
+num_games = len(Matchups)
+
+
+##LOAD IN THE DATA
+oEPA = pd.read_csv("week" + str(week) + "/" + "rbsdmOFFENSE.csv")
+dEPA = pd.read_csv("week" + str(week) + "/" + "rbsdmDEFENSE.csv")
+##CREATE DECK
+
+
+####EPA ___fix later i guess 
+
+#url = 'https://rbsdm.com/stats/'
+#url = 'https://rbsdm.com/stats/stats/datatables-binding-0.13/datatables.js'
+#uf = urllib.request.urlopen(url)
+#html = uf.read()
+#string_EPA = str(html)
+
+#starter = string_EPA.index("aria-describedby")
+#end = string_EPA.index("/tbody")
+
+teams_o =[]
+epa_offense=[]
+for x in range(32):
+  teams_o.append(oEPA["Abbr"][x])
+  epa_offense.append(round(oEPA["EPA/play"][x], 3))
+
+  
+  
+teams_d =[]
+epa_defense=[]
+for x in range(32):
+  teams_d.append(dEPA["Abbr"][x])
+  epa_defense.append(dEPA["EPA/play"][x])
+  
+
+  
+#o/u and  ATS
+ats_url = 'https://www.teamrankings.com/nfl/trends/ats_trends/'
+uf = urllib.request.urlopen(ats_url)
+html = uf.read()
+string_ats = str(html)
+
+starter = string_ats.index("tr-table datatable scrollable")
+end = string_ats.index("Responsive right sidebar") 
+ATS_ = string_ats[starter:end]
+stringArr = ATS_.split("</td>")
+stringArr = ATS_.split("www.teamrankings.com/nfl/team")
+stringArr = stringArr[1:33]
+str_arr =[]
+for i in range(len(stringArr)):
+  d = stringArr[i].split('</a></td>\\n\\t\\t\\t\\t\\t\\n\\t\\t\\t<td class="text-right" data-sort=')
+  s = d[1].index(">") + 1
+  e = d[1].index("<")
+  d[1] = d[1][s:e]
+  index = d[0].index(">")
+  index = index+1
+  d[0] = d[0][index:]
+  str_arr.append(d)
+
+ATS_ARRAY = str_arr 
+ats=[]
+teams_ats=[]
+for i in range(len(ATS_ARRAY)):
+  ats.append(ATS_ARRAY[i][1]) 
+  teams_ats.append(ATS_ARRAY[i][0]) 
+  
+
+ou_url = 'https://www.teamrankings.com/nfl/trends/ou_trends/'
+uf = urllib.request.urlopen(ou_url)
+html = uf.read()
+string_ou = str(html)
+starter = string_ou.index("tr-table datatable scrollable")
+end = string_ou.index("Responsive right sidebar")
+OU_ = string_ou[starter:end]
+stringArr = OU_.split("</td>")
+stringArr = OU_.split("www.teamrankings.com/nfl/team")
+stringArr = stringArr[1:33]
+str_arrOU =[]
+for i in range(len(stringArr)):
+  d = stringArr[i].split('</a></td>\\n\\t\\t\\t\\t\\t\\n\\t\\t\\t<td class="text-right" data-sort=')
+  s = d[1].index(">") + 1
+  e = d[1].index("<")
+  d[1] = d[1][s:e]
+  index = d[0].index(">")
+  index = index+1
+  d[0] = d[0][index:]
+  str_arrOU.append(d)
+
+  
+OU_ARRAY = str_arrOU 
+over=[]
+teams_ou=[]
+for i in range(len(OU_ARRAY)):
+  over.append(OU_ARRAY[i][1]) 
+  teams_ou.append(OU_ARRAY[i][0])   
+
+
+#ATS = pd.read_csv("week" + str(week) + "/ATS.csv")
+#OU = pd.read_csv("week" + str(week) + "/OverUnder.csv")
+
+#teams_ou =[]
+#over = []
+#teams_ats =[]
+#ats=[]
+#for i in range(32):
+ # teams_ou.append(OU["Team"][i])
+  #over.append(OU["Over Record"][i])
+  #teams_ats.append(OU["Team"][i])
+  #ats.append(ATS["ATS Record"][i])
+ 
+
+
+#Line Performance 
+import urllib.request
+#May need to update url each week. thats it)
+url = 'https://www.espn.com/nfl/story/_/id/32176833/2021-nfl-pass-rushing-run-stopping-blocking-leaderboard-win-rate-rankings'
+uf = urllib.request.urlopen(url)
+html = uf.read()
+string = str(html) 
+
+#######Pass Rush
+TPRW = string.index('Team Pass Rush Win Rate')
+TRSW = string.index('Team Run Stop Win Rate')
+TeamPassRushWinRate = string[TPRW:TRSW]
+
+stringArr = TeamPassRushWinRate.split("/")
+
+PassRush =[]
+for i in range(len(stringArr)):
+  for j in range(len(short2)):
+    if stringArr[i].upper() == short2[j]:
+      PassRush.append(short[j])
+
+   
+##############Run stop
+TPBR = string.index('Team Pass Block Win Rate')
+TeamRunStopWinRate = string[TRSW:TPBR]
+
+
+st_arr=[]    
+stringArr = TeamRunStopWinRate.split(". ")
+for i in range(len(stringArr)):
+  st_arr.append(stringArr[i].split(",")[0])
+
+  
+st_arr = st_arr[1:33]
+RunStop=[]
+for i in range(len(st_arr)):
+  for j in range(len(long2)):
+    if long2[j] in st_arr[i]:
+      RunStop.append(short[j])
+      
+   
+
+#Pass blocking   #######################
+TRBR = string.index('Team Run Block Win Rate')
+TeamPassBlockWinRate = string[TPBR:TRBR]
+
+st_arr=[]    
+stringArr = TeamPassBlockWinRate.split(". ")
+for i in range(len(stringArr)):
+  st_arr.append(stringArr[i].split(",")[0])
+
+  
+
+PassBlock=[]
+for i in range(len(st_arr)):
+  for j in range(len(long2)):
+    if long2[j] in st_arr[i]:
+      PassBlock.append(short[j])
+      
+      
+#Run blocking   #######################
+end = string.index('Visit the')
+TeamRunBlockWinRate = string[TRBR:end]
+
+st_arr=[]    
+stringArr = TeamRunBlockWinRate.split(". ")
+for i in range(len(stringArr)):
+  st_arr.append(stringArr[i].split(",")[0])
+
+  
+st_arr = st_arr[1:33]
+RunBlock=[]
+for i in range(len(st_arr)):
+  for j in range(len(long2)):
+    if long2[j] in st_arr[i]:
+      RunBlock.append(short[j])
+      
+      
+#DVOA 
+
+
+new_data = pd.read_csv("week" + str(week) + "/" + "2021 Team DVOA Ratings Overall.csv")
+
+team_dvoa =[]
+o_dvoa =[]
+d_dvoa = []
+SOS =[]
+
+for t in range(len(new_data["Team"])):
+  if new_data["Team"][t] == "LAR":
+    team_dvoa.append("LA")
+  else:
+    team_dvoa.append(new_data["Team"][t])
+  o_dvoa.append(new_data["Offense DVOA Rank"][t])
+  d_dvoa.append(new_data["Defense DVOA Rank"][t])
+  SOS.append(new_data["Past Schedule Rank"][t])
+  
+  
+#pass/run dvoa
+offense_data = pd.read_csv("week" + str(week) + "/" + "2021 Team DVOA Ratings Offense.csv")
+oTeam=[]
+o_run_dvoa=[]
+o_pass_dvoa=[]
+for t in range(len(offense_data["Team"])):
+  if offense_data["Team"][t] == "LAR":
+    oTeam.append("LA")
+  else:
+    oTeam.append(offense_data["Team"][t])
+  o_pass_dvoa.append(offense_data["Pass DVOA Rank"][t])
+  o_run_dvoa.append(offense_data["Rush DVOA Rank"][t])
+
+
+
+
+  
+defense_data = pd.read_csv("week" + str(week) + "/" + "2021 Team DVOA Ratings Defense.csv")
+  
+dTeam =[]
+d_run_dvoa=[]
+d_pass_dvoa=[]
+for t in range(len(defense_data["Team"])):
+  if defense_data["Team"][t] == "LAR":
+    dTeam.append("LA")
+  else:
+    dTeam.append(defense_data["Team"][t])
+  d_pass_dvoa.append(defense_data["Pass DVOA Rank"][t])
+  d_run_dvoa.append(defense_data["Rush DVOA Rank"][t])
+  
+  
+prs = Presentation("Template v2.pptx")
+
+
+
+
+for i in range(num_games):
+  slide = prs.slides[i]
+  team1 = Matchups[i][0]
+  team2 = Matchups[i][1]
+  if team1 == "LA":
+    fontChanger(slide.shapes[0], "LAR", 24, black, False, PP_ALIGN.CENTER)
+  else:
+    fontChanger(slide.shapes[0], team1, 24, black, False, PP_ALIGN.CENTER)  
+  if team2 == "LA":
+    fontChanger(slide.shapes[1], "LAR", 24, black, False, PP_ALIGN.CENTER)
+  else:
+    fontChanger(slide.shapes[1], team2, 24, black, False, PP_ALIGN.CENTER)    
+  table1 = slide.shapes[2].table
+  table2 = slide.shapes[3].table
+  table3 = slide.shapes[4].table
+  table4 = slide.shapes[5].table
+  FB_INDEX = team_dvoa.index(team1)
+  FB_INDEX2 = team_dvoa.index(team2)
+  FBO_INDEX = oTeam.index(team1)
+  FBO_INDEX2 = oTeam.index(team2)
+  FBD_INDEX = dTeam.index(team1)
+  FBD_INDEX2 = dTeam.index(team2) 
+  fontChanger(table1.cell(3,1), str(d_pass_dvoa[FBD_INDEX]), 18, black, False, PP_ALIGN.CENTER)
+  fontChanger(table1.cell(3,2), str(o_pass_dvoa[FBO_INDEX]), 18, black, False, PP_ALIGN.CENTER)  
+  fontChanger(table1.cell(5,1), str(d_run_dvoa[FBD_INDEX]), 18, black, False, PP_ALIGN.CENTER)
+  fontChanger(table1.cell(5,2), str(o_run_dvoa[FBO_INDEX]), 18, black, False, PP_ALIGN.CENTER)  
+  fontChanger(table3.cell(3,1), str(d_pass_dvoa[FBD_INDEX2]), 18, black, False, PP_ALIGN.CENTER)
+  fontChanger(table3.cell(3,2), str(o_pass_dvoa[FBO_INDEX2]), 18, black, False, PP_ALIGN.CENTER)  
+  fontChanger(table3.cell(5,1), str(d_run_dvoa[FBD_INDEX2]), 18, black, False, PP_ALIGN.CENTER)
+  fontChanger(table3.cell(5,2), str(o_run_dvoa[FBO_INDEX2]), 18, black, False, PP_ALIGN.CENTER)    
+  fontChanger(table1.cell(1,1), str(d_dvoa[FB_INDEX]), 18, black, False, PP_ALIGN.CENTER)
+  fontChanger(table1.cell(1,2), str(o_dvoa[FB_INDEX]), 18, black, False, PP_ALIGN.CENTER)  
+  fontChanger(table3.cell(1,1), str(d_dvoa[FB_INDEX2]), 18, black, False, PP_ALIGN.CENTER)
+  fontChanger(table3.cell(1,2), str(o_dvoa[FB_INDEX2]), 18, black, False, PP_ALIGN.CENTER)
+  fontChanger(table2.cell(3,1), str(SOS[FB_INDEX]), 18, black, False, PP_ALIGN.CENTER)
+  fontChanger(table4.cell(3,1), str(SOS[FB_INDEX2]), 18, black, False, PP_ALIGN.CENTER)  
+  fontChanger(table1.cell(2,1), str(PassRush.index(team1)+1), 18, black, False, PP_ALIGN.CENTER)
+  fontChanger(table1.cell(2,2), str(PassBlock.index(team1)+1), 18, black, False, PP_ALIGN.CENTER)
+  fontChanger(table1.cell(4,1), str(RunStop.index(team1)+1), 18, black, False, PP_ALIGN.CENTER)
+  fontChanger(table1.cell(4,2), str(RunBlock.index(team1)+1), 18, black, False, PP_ALIGN.CENTER)  
+  fontChanger(table3.cell(2,1), str(PassRush.index(team2)+1), 18, black, False, PP_ALIGN.CENTER)
+  fontChanger(table3.cell(2,2), str(PassBlock.index(team2)+1), 18, black, False, PP_ALIGN.CENTER)
+  fontChanger(table3.cell(4,1), str(RunStop.index(team2)+1), 18, black, False, PP_ALIGN.CENTER)
+  fontChanger(table3.cell(4,2), str(RunBlock.index(team2)+1), 18, black, False, PP_ALIGN.CENTER) 
+  i_o1 = teams_o.index(team1)
+  i_o2 = teams_o.index(team2)
+  i_d1 = teams_d.index(team1)
+  i_d2 = teams_d.index(team2)
+  fontChanger(table1.cell(6,2), str(i_o1+1), 18, black, False, PP_ALIGN.CENTER)
+  fontChanger(table3.cell(6,2), str(i_o2+1), 18, black, False, PP_ALIGN.CENTER)
+  fontChanger(table1.cell(6,1), str(i_d1+1), 18, black, False, PP_ALIGN.CENTER)
+  fontChanger(table3.cell(6,1), str(i_d2+1), 18, black, False, PP_ALIGN.CENTER)
+  ats_I_getter = short.index(team1)
+  long_name1 = long[ats_I_getter]
+  ats_get = teams_ats.index(long_name1)
+  team_ats = ats[ats_get]
+  fontChanger(table2.cell(2,1), team_ats, 18, black, False, PP_ALIGN.CENTER) 
+  ats_I_getter = short.index(team2)
+  long_name1 = long[ats_I_getter]
+  ats_get = teams_ats.index(long_name1)
+  team_ats = ats[ats_get]
+  fontChanger(table4.cell(2,1), team_ats, 18, black, False, PP_ALIGN.CENTER)
+  ou_I_getter = short.index(team1)
+  long_name1 = long[ou_I_getter]
+  ou_get = teams_ou.index(long_name1)
+  team_ou = over[ou_get]
+  fontChanger(table2.cell(1,1), team_ou, 18, black, False, PP_ALIGN.CENTER)  
+  ou_I_getter = short.index(team2)
+  long_name1 = long[ou_I_getter]
+  ou_get = teams_ou.index(long_name1)
+  team_ou = over[ou_get]
+  fontChanger(table4.cell(1,1), team_ou, 18, black, False, PP_ALIGN.CENTER)  
+  
+  DVOA_OFF1 = table1.cell(1,2)
+  DVOA_DEF1 = table1.cell(1,1)
+  passRush1 = table1.cell(2,1)
+  runStop1 = table1.cell(4,1)
+  EPA_D1 = table1.cell(6,1)
+  passBlock1 = table1.cell(2,2)
+  runBlock1 = table1.cell(4,2)
+  EPA_O1 = table1.cell(6,2)
+  DVOA_OFF2 = table3.cell(1,2)
+  DVOA_DEF2 = table3.cell(1,1)
+  passRush2 = table3.cell(2,1)
+  runStop2 = table3.cell(4,1)
+  EPA_D2 = table3.cell(6,1)
+  passBlock2 = table3.cell(2,2)
+  runBlock2 = table3.cell(4,2)
+  EPA_O2 = table3.cell(6,2)
+  DVOA_PD1 = table1.cell(3,1)
+  DVOA_PO1 = table1.cell(3,2)
+  DVOA_RD1 = table1.cell(5,1)
+  DVOA_RO1 = table1.cell(5,2)
+  DVOA_PD2 = table3.cell(3,1)
+  DVOA_PO2 = table3.cell(3,2)
+  DVOA_RD2 = table3.cell(5,1)
+  DVOA_RO2 = table3.cell(5,2)
+  if int(DVOA_DEF1.text) - int(DVOA_OFF2.text) >=10:
+    fontChanger(DVOA_DEF1, DVOA_DEF1.text, 18, red, False, PP_ALIGN.CENTER)
+    fontChanger(DVOA_OFF2, DVOA_OFF2.text, 18, black, True, PP_ALIGN.CENTER)
+  if int(DVOA_DEF2.text) - int(DVOA_OFF1.text) >=10:
+    fontChanger(DVOA_DEF2, DVOA_DEF2.text, 18, red, False, PP_ALIGN.CENTER)
+    fontChanger(DVOA_OFF1, DVOA_OFF1.text, 18, black, True, PP_ALIGN.CENTER)
+  if int(DVOA_OFF1.text) - int(DVOA_DEF2.text) >=10:
+    fontChanger(DVOA_OFF1, DVOA_OFF1.text, 18, red, False, PP_ALIGN.CENTER)
+    fontChanger(DVOA_DEF2, DVOA_DEF2.text, 18, black, True, PP_ALIGN.CENTER)
+  if int(DVOA_OFF2.text) - int(DVOA_DEF1.text) >=10:
+    fontChanger(DVOA_OFF2, DVOA_OFF2.text, 18, red, False, PP_ALIGN.CENTER)
+    fontChanger(DVOA_DEF1, DVOA_DEF1.text, 18, black, True, PP_ALIGN.CENTER)
+
+  if int(DVOA_PD1.text) - int(DVOA_PO2.text) >=10:
+    fontChanger(DVOA_PD1, DVOA_PD1.text, 18, red, False, PP_ALIGN.CENTER)
+    fontChanger(DVOA_PO2, DVOA_PO2.text, 18, black, True, PP_ALIGN.CENTER)
+  if int(DVOA_PO2.text) - int(DVOA_PD1.text) >=10:
+    fontChanger(DVOA_PO2, DVOA_PO2.text, 18, red, False, PP_ALIGN.CENTER)
+    fontChanger(DVOA_PD1, DVOA_PD1.text, 18, black, True, PP_ALIGN.CENTER)
+
+  if int(DVOA_PD2.text) - int(DVOA_PO1.text) >=10:
+    fontChanger(DVOA_PD2, DVOA_PD2.text, 18, red, False, PP_ALIGN.CENTER)
+    fontChanger(DVOA_PO1, DVOA_PO1.text, 18, black, True, PP_ALIGN.CENTER)
+  if int(DVOA_PO1.text) - int(DVOA_PD2.text) >=10:
+    fontChanger(DVOA_PO1, DVOA_PO1.text, 18, red, False, PP_ALIGN.CENTER)
+    fontChanger(DVOA_PD2, DVOA_PD2.text, 18, black, True, PP_ALIGN.CENTER)
+
+
+  if int(DVOA_RD1.text) - int(DVOA_RO2.text) >=10:
+    fontChanger(DVOA_RD1, DVOA_RD1.text, 18, red, False, PP_ALIGN.CENTER)
+    fontChanger(DVOA_RO2, DVOA_RO2.text, 18, black, True, PP_ALIGN.CENTER)
+  if int(DVOA_RO2.text) - int(DVOA_RD1.text) >=10:
+    fontChanger(DVOA_RO2, DVOA_RO2.text, 18, red, False, PP_ALIGN.CENTER)
+    fontChanger(DVOA_RD1, DVOA_RD1.text, 18, black, True, PP_ALIGN.CENTER)
+
+  if int(DVOA_RD2.text) - int(DVOA_RO1.text) >=10:
+    fontChanger(DVOA_RD2, DVOA_RD2.text, 18, red, False, PP_ALIGN.CENTER)
+    fontChanger(DVOA_RO1, DVOA_RO1.text, 18, black, True, PP_ALIGN.CENTER)
+  if int(DVOA_RO1.text) - int(DVOA_RD2.text) >=10:
+    fontChanger(DVOA_RO1, DVOA_RO1.text, 18, red, False, PP_ALIGN.CENTER)
+    fontChanger(DVOA_RD2, DVOA_RD2.text, 18, black, True, PP_ALIGN.CENTER)
+
+    
+  if int(passBlock1.text) - int(passRush2.text) >=10:
+    fontChanger(passBlock1, passBlock1.text, 18, red, False, PP_ALIGN.CENTER)
+    fontChanger(passRush2, passRush2.text, 18, black, True, PP_ALIGN.CENTER)
+  if int(passBlock2.text) - int(passRush1.text) >=10:
+    fontChanger(passBlock2, passBlock2.text, 18, red, False, PP_ALIGN.CENTER)
+    fontChanger(passRush1, passRush1.text, 18, black, True, PP_ALIGN.CENTER)
+  if int(passRush1.text) - int(passBlock2.text) >=10:
+    fontChanger(passRush1, passRush1.text, 18, red, False, PP_ALIGN.CENTER)
+    fontChanger(passBlock2, passBlock2.text, 18, black, True, PP_ALIGN.CENTER)
+  if int(passRush2.text) - int(passBlock1.text) >=10:
+    fontChanger(passRush2, passRush2.text, 18, red, False, PP_ALIGN.CENTER)
+    fontChanger(passBlock1, passBlock1.text, 18, black, True, PP_ALIGN.CENTER)    
+  if int(runBlock1.text) - int(runStop2.text) >=10:
+    fontChanger(runBlock1, runBlock1.text, 18, red, False, PP_ALIGN.CENTER)
+    fontChanger(runStop2, runStop2.text, 18, black, True, PP_ALIGN.CENTER)
+  if int(runBlock2.text) - int(runStop1.text) >=10:
+    fontChanger(runBlock2, runBlock2.text, 18, red, False, PP_ALIGN.CENTER)
+    fontChanger(runStop1, runStop1.text, 18, black, True, PP_ALIGN.CENTER)
+  if int(runStop1.text) - int(runBlock2.text) >=10:
+    fontChanger(runStop1, runStop1.text, 18, red, False, PP_ALIGN.CENTER)
+    fontChanger(runBlock2, runBlock2.text, 18, black, True, PP_ALIGN.CENTER)
+  if int(runStop2.text) - int(runBlock1.text) >=10:
+    fontChanger(runStop2, runStop2.text, 18, red, False, PP_ALIGN.CENTER)
+    fontChanger(runBlock1, runBlock1.text, 18, black, True, PP_ALIGN.CENTER)    
+  if int(EPA_O1.text) - int(EPA_D2.text) >=10:
+    fontChanger(EPA_O1, EPA_O1.text, 18, red, False, PP_ALIGN.CENTER)
+    fontChanger(EPA_D2, EPA_D2.text, 18, black, True, PP_ALIGN.CENTER)
+  if int(EPA_O2.text) - int(EPA_D1.text) >=10:
+    fontChanger(EPA_O2, EPA_O2.text, 18, red, False, PP_ALIGN.CENTER)
+    fontChanger(EPA_D1, EPA_D1.text, 18, black, True, PP_ALIGN.CENTER)
+  if int(EPA_D1.text) - int(EPA_O2.text) >=10:
+    fontChanger(EPA_D1, EPA_D1.text, 18, red, False, PP_ALIGN.CENTER)
+    fontChanger(EPA_O2, EPA_O2.text, 18, black, True, PP_ALIGN.CENTER)
+  if int(EPA_D2.text) - int(EPA_O1.text) >=10:
+    fontChanger(EPA_D2, EPA_D2.text, 18, red, False, PP_ALIGN.CENTER)
+    fontChanger(EPA_O1, EPA_O1.text, 18, black, True, PP_ALIGN.CENTER)
+ 
+ 
+
+print("WELCOME TO WEEK " + str(week))
+ 
+prs.save("week" + str(week) + "/Week " + str(week) + " Matchups.pptx")
+
+
+
+
+
+
+
+
+
+
+
+
